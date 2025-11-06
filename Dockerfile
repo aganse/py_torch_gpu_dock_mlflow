@@ -1,9 +1,8 @@
 # Default (GPU-enabled) base image - useful if you want the same image to support GPUs when available
-# Example tag: pytorch/pytorch:2.2.0-cuda11.8-cudnn8-runtime
 ARG BASE_IMAGE=pytorch/pytorch:2.2.0-cuda11.8-cudnn8-runtime
 FROM ${BASE_IMAGE}
 
-# CPU-only alternative (commented) - uncomment or use a different build arg for a smaller image
+# CPU-only alternative - uncomment or use a different build arg for a smaller image
 # FROM python:3.11-slim
 # RUN pip install --no-cache-dir "torch==2.2.0+cpu" -f https://download.pytorch.org/whl/cpu/torch_stable.html
 

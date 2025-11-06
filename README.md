@@ -1,5 +1,11 @@
 # py_torch_gpu_dock_mlflow
 
+> [!WARNING]  
+> Development in progress on this branch; not expected to work plus fyi I'm
+> using AI code generation tools (including for README contents). Don't use
+> till reviewed/tested/merged into main.
+
+
 This repository is a PyTorch equivalent of py_tf2_gpu_dock_mlflow. It provides:
 - A minimal PyTorch training example that is compatible with both GPU and CPU hosts.
 - MLflow (v3.x) model logging via mlflow.pytorch.
