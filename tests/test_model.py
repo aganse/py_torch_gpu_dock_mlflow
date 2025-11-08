@@ -1,11 +1,18 @@
+import unittest
 import torch
-from src.model import SimpleClassifier
+from utils import build_model
 
+class TestModel(unittest.TestCase):
+    def test_build_model_output_shape(self):
+        model = build_model("resnet18")
+        dummy_input = torch.randn(2, 3, 224, 224)
+        output = model(dummy_input)
+        self.assertEqual(output.shape[0], 2)
+        self.assertEqual(output.shape[1], 10)
 
-def test_model_forward_shapes():
-    batch = 8
-    input_dim = 32
-    x = torch.randn(batch, input_dim)
-    model = SimpleClassifier(input_dim=input_dim, hidden=16, num_classes=5)
-    out = model(x)
-    assert out.shape == (batch, 5)
+    def test_invalid_model_name(self):
+        with self.assertRaises(ValueError):
+            build_model("invalid_model")
+
+if __name__ == "__main__":
+    unittest.main()
