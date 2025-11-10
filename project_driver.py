@@ -1,50 +1,90 @@
 import argparse
+import logging
+import os
+
+import mlflow
 import torch
 import torch.nn as nn
 import torch.optim as optim
+
 from load_ptdata import get_data_loaders
 from mlflow_callback import MLflowTorchCallback
 from utils import build_model, evaluate
 
-def main(args):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+logger = logging.getLogger(__name__)
 
+def main(args):
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)s | %(message)s",
+    )
+    tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
+    if tracking_uri:
+        mlflow.set_tracking_uri(tracking_uri)
+        logger.info("MLflow tracking URI set to %s", tracking_uri)
+    else:
+        logger.info("MLFLOW_TRACKING_URI not set; using local `mlruns` directory.")
+    mlflow.set_experiment(args.experiment_name)
+    logger.info("MLflow experiment: %s", args.experiment_name)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    logger.info("Using device: %s", device)
+
+    logger.info("Preparing data loaders (batch_size=%d)", args.batch_size)
     train_loader, val_loader = get_data_loaders(batch_size=args.batch_size)
+    logger.info(
+        "Data loaders ready: train=%d samples, val=%d samples",
+        len(train_loader.dataset),
+        len(val_loader.dataset),
+    )
     model = build_model(args.model_name).to(device)
+    logger.info("Model '%s' moved to device", args.model_name)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
-    mlflow.set_experiment(args.experiment_name)
-    mlflow_callback = MLflowTorchCallback(model_name=args.model_name, register=True)
+    if args.register_model:
+        logger.info("Model registry logging enabled.")
+    else:
+        logger.info("Model registry logging disabled; artifacts will not be registered.")
+    mlflow_callback = MLflowTorchCallback(
+        model_name=args.model_name,
+        register=args.register_model,
+    )
 
-    for epoch in range(1, args.epochs+1):
-        model.train()
-        total_loss = 0.0
-        for inputs, targets in train_loader:
-            inputs, targets = inputs.to(device), targets.to(device)
-            optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
+    logger.info("Starting training for %d epochs", args.epochs)
+    with mlflow.start_run(run_name=f"{args.model_name}-training"):
+        for epoch in range(1, args.epochs + 1):
+            model.train()
+            total_loss = 0.0
+            for inputs, targets in train_loader:
+                inputs, targets = inputs.to(device), targets.to(device)
+                optimizer.zero_grad()
+                outputs = model(inputs)
+                loss = criterion(outputs, targets)
+                loss.backward()
+                optimizer.step()
+                total_loss += loss.item()
 
-        avg_loss = total_loss / len(train_loader)
-        print(f"Epoch {epoch}: train_loss = {avg_loss:.4f}")
+            avg_loss = total_loss / len(train_loader)
+            logger.info("Epoch %d: train_loss=%.4f", epoch, avg_loss)
 
-        val_loss, val_acc = evaluate(model, val_loader, criterion, device)
-        print(f"Epoch {epoch}: val_loss = {val_loss:.4f}, val_acc = {val_acc:.4f}")
+            val_loss, val_acc = evaluate(model, val_loader, criterion, device)
+            logger.info("Epoch %d: val_loss=%.4f val_acc=%.4f", epoch, val_loss, val_acc)
 
-        mlflow.log_metric("epoch", epoch)
-        mlflow.log_metric("train_loss", avg_loss, step=epoch)
-        mlflow.log_metric("val_loss", val_loss, step=epoch)
-        mlflow.log_metric("val_acc", val_acc, step=epoch)
+            mlflow.log_metric("train_loss", avg_loss, step=epoch)
+            mlflow.log_metric("val_loss", val_loss, step=epoch)
+            mlflow.log_metric("val_acc", val_acc, step=epoch)
 
-    params = {"epochs": args.epochs, "batch_size": args.batch_size, "learning_rate": args.learning_rate, "model_name": args.model_name}
-    metrics = {"final_val_loss": val_loss, "final_val_acc": val_acc}
-    mlflow_callback.log_model(model, params=params, metrics=metrics)
+        params = {
+            "epochs": args.epochs,
+            "batch_size": args.batch_size,
+            "learning_rate": args.learning_rate,
+            "model_name": args.model_name,
+        }
+        metrics = {"final_val_loss": val_loss, "final_val_acc": val_acc}
+        logger.info("Logging final metrics and model artifact to MLflow")
+        mlflow_callback.log_model(model, params=params, metrics=metrics)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -11,7 +11,20 @@ def get_data_loaders(batch_size: int = 32, data_dir: str = "./data"):
     train_ds = datasets.FakeData(size=1000, transform=transform)
     val_ds = datasets.FakeData(size=200, transform=transform)
 
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
-    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
+    pin_memory = torch.cuda.is_available()
+    train_loader = DataLoader(
+        train_ds,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=4,
+        pin_memory=pin_memory,
+    )
+    val_loader = DataLoader(
+        val_ds,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=4,
+        pin_memory=pin_memory,
+    )
 
     return train_loader, val_loader

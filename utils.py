@@ -4,11 +4,13 @@ import torchvision.models as models
 
 def build_model(model_name: str):
     if model_name == "resnet18":
-        return models.resnet18(pretrained=False, num_classes=10)
+        model = models.resnet18(weights=None)
     elif model_name == "resnet50":
-        return models.resnet50(pretrained=False, num_classes=10)
+        model = models.resnet50(weights=None)
     else:
         raise ValueError(f"Unknown model_name: {model_name}")
+    model.fc = nn.Linear(model.fc.in_features, 10)
+    return model
 
 def evaluate(model, dataloader, criterion, device):
     model.eval()

@@ -1,6 +1,11 @@
+import logging
+
 import mlflow
 import mlflow.pytorch
+from mlflow.exceptions import MlflowException
 import torch
+
+logger = logging.getLogger(__name__)
 
 class MLflowTorchCallback:
     def __init__(self, model_name: str, register: bool = False):
@@ -15,10 +20,27 @@ class MLflowTorchCallback:
             for k, v in metrics.items():
                 mlflow.log_metric(k, v)
 
-        mlflow.pytorch.log_model(model, name=self.model_name, artifact_path=artifact_path)
-
+        log_args = {"artifact_path": artifact_path}
         if self.register:
-            model_uri = f"models:/{self.model_name}/latest"
-            mlflow.register_model(model_uri=model_uri, name=self.model_name)
+            log_args["registered_model_name"] = self.model_name
 
-        print(f"Model logged in MLflow with name={self.model_name}")
+        registered_successfully = False
+        try:
+            mlflow.pytorch.log_model(model, **log_args)
+            registered_successfully = self.register
+        except MlflowException as exc:
+            if self.register:
+                exc_msg = getattr(exc, "message", str(exc))
+                logger.warning(
+                    "Model registry logging failed (%s). Falling back to artifact logging only.",
+                    exc_msg,
+                )
+                mlflow.pytorch.log_model(model, artifact_path=artifact_path)
+                registered_successfully = False
+            else:
+                raise
+
+        if registered_successfully:
+            logger.info("Model logged and registered in MLflow as '%s'", self.model_name)
+        else:
+            logger.info("Model logged in MLflow artifact path '%s'", artifact_path)
