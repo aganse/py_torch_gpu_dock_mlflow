@@ -7,10 +7,17 @@ install:
 	pip install -r requirements.txt
 
 run:
-	python project_driver.py
+	python train.py
 
 train:
 	make env && make run
 
-test:
+unittest:
 	python -m pytest -q tests/
+
+run_mlproject:
+	./project_driver.bash
+
+build:
+	docker build -t torch-gpu-mlflow .
+	# docker run --rm torch-gpu-mlflow --epochs 1 --batch_size 
