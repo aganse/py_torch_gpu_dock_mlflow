@@ -10,7 +10,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     VIRTUAL_ENV=/opt/venv
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends python3 python3-venv python3-pip bash awscli \
+ && apt-get install -y --no-install-recommends python3 python3-venv python3-pip bash awscli git \
  && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m venv "$VIRTUAL_ENV" \

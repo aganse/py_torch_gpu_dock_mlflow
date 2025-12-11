@@ -14,7 +14,10 @@ class MLflowTorchCallback:
 
     def log_model(self, model: torch.nn.Module, artifact_path: str = "model", params: dict = None, metrics: dict = None):
         if params:
+            project_logged = {"epochs", "batch_size", "learning_rate", "model_name"}
             for k, v in params.items():
+                if k in project_logged:
+                    continue
                 mlflow.log_param(k, v)
         if metrics:
             for k, v in metrics.items():

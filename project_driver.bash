@@ -1,21 +1,10 @@
 #!/bin/bash
 
-# After development is frozen/slowed, we can also run trainings directly off
-# the repo without cloning it locally; ie for just trying different parameters.
-# Only this driver script is needed in that case, as the rest gets pulled from
-# repo.  According to mlflow documentation a git commit or branch name at that
-# repo uri can be specified to use like `-v abcde123` or `-v feature/mybranch`.
-# I've not tried this yet though.  (Without -v and get the default branch.)
-# mlflow run https://github.com/aganse/py_tf2_gpu_dock_mlflow -v abcde123 ...
-# For more details see https://mlflow.org/docs/1.30.0/projects.html#running-projects
-
-# Some possibilities to set in MLFLOW_TRACKING_URI in calling environment, or
-# could set these in mlflow run args per below, but I'm just using the env var.
-# -A add-host=host.docker.internal:host-gateway       \
-# -A env=MLFLOW_TRACKING_URI=http://host.docker.internal:5000 \
-# -A env=MLFLOW_TRACKING_URI=http://172.17.0.1:5000 \
-# -A env=MLFLOW_TRACKING_URI=http://192.168.65.2:5000 \
-
+# It appears that while MLflow Projects is still available in mlflow 3.x, it
+# has stopped being documented further and being actively expanded.  No
+# deprecation warnings yet, but this does seem to suggest that the Projects
+# framework aspect of this work here is of less interest than just the
+# modeling and logging to MLflow itself - still important those!  Just fyi.
 
 # Set variable based on whether gpu is available on this system
 if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi >/dev/null 2>&1; then
@@ -26,10 +15,17 @@ else
     gpu_arg=""
 fi
 
+# Concatenate envvars to set in mlflow run
+varslist=""
+varslist+="MLFLOW_TRACKING_URI=http://192.168.1.5:5000"
+varslist+=","
+varslist+="GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git"
+
 mlflow run .                                            \
     ${gpu_arg}                                          \
     --experiment-name='torch_gpu_experiment'            \
-    -P epochs=1                                         \
+    -A env=${varslist}                                  \
+    -P epochs=20                                        \
     -P batch_size=8                                     \
     -P learning_rate=1e-3                               \
     -P model_name=resnet18
