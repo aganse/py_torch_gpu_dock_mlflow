@@ -12,9 +12,11 @@ entry_points:
       batch_size: {type: int, default: 32}
       learning_rate: {type: float, default: 1e-3}
       model_name: {type: str, default: "resnet18"}
+      log_level: {type: str, default: "INFO"}
     command: >
       python train.py \
         --epochs {epochs} \
         --batch_size {batch_size} \
         --learning_rate {learning_rate} \
-        --model_name {model_name}
+        --model_name {model_name} \
+        --log-level {log_level}

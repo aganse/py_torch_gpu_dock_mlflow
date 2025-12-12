@@ -17,18 +17,20 @@ fi
 
 # Concatenate envvars to set in mlflow run
 varslist=""
-varslist+="MLFLOW_TRACKING_URI=http://192.168.1.5:5000"
-varslist+=","
+varslist+="MLFLOW_TRACKING_URI=http://192.168.1.5:5000,"
 varslist+="GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git"
 
 mlflow run .                                            \
     ${gpu_arg}                                          \
     --experiment-name='torch_gpu_experiment'            \
     -A env=${varslist}                                  \
-    -P epochs=20                                        \
+    -P epochs=3                                         \
     -P batch_size=8                                     \
     -P learning_rate=1e-3                               \
-    -P model_name=resnet18
+    -P model_name=resnet18                              \
+    -P log_level=INFO
+
+    # --build-image
 
 
 
@@ -48,4 +50,3 @@ mlflow run .                                            \
     # -P batch_size=10                                  \
     # -P training_samples=100                           \
     # -P validation_samples=100
-

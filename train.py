@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import time
 
 import mlflow
 import torch
@@ -11,13 +12,48 @@ from load_ptdata import get_data_loaders
 from mlflow_callback import MLflowTorchCallback
 from utils import build_model, evaluate
 
+LOG_LEVELS = {
+    "CRITICAL": logging.CRITICAL,
+    "ERROR": logging.ERROR,
+    "WARNING": logging.WARNING,
+    "INFO": logging.INFO,
+    "DEBUG": logging.DEBUG,
+}
+
 logger = logging.getLogger(__name__)
 
+
+class DotMillisecondsFormatter(logging.Formatter):
+    default_msec_format = "%s.%03d"
+
+
+def resolve_log_level(name: str) -> int:
+    try:
+        return LOG_LEVELS[name.upper()]
+    except KeyError as exc:
+        raise ValueError(f"Unsupported log level '{name}'.") from exc
+
+
+def configure_logging(level: int) -> None:
+    formatter = DotMillisecondsFormatter("%(asctime)s | %(levelname)s | %(message)s")
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    logging.basicConfig(level=level, handlers=[handler], force=True)
+
+
+def format_duration(seconds: float) -> str:
+    if seconds < 180:
+        return f"{seconds:.1f}s"
+    minutes = seconds / 60
+    if minutes < 120:
+        return f"{minutes:.1f}m"
+    hours = seconds / 3600
+    return f"{hours:.1f}h"
+
+
 def main(args):
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(levelname)s | %(message)s",
-    )
+    log_level = resolve_log_level(args.log_level)
+    configure_logging(log_level)
     tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
     if tracking_uri:
         mlflow.set_tracking_uri(tracking_uri)
@@ -54,7 +90,9 @@ def main(args):
 
     logger.info("Starting training for %d epochs", args.epochs)
     with mlflow.start_run(run_name=f"{args.model_name}-training"):
+        training_start = time.perf_counter()
         for epoch in range(1, args.epochs + 1):
+            epoch_start = time.perf_counter()
             model.train()
             total_loss = 0.0
             for inputs, targets in train_loader:
@@ -67,15 +105,24 @@ def main(args):
                 total_loss += loss.item()
 
             avg_loss = total_loss / len(train_loader)
-            logger.info("Epoch %d: train_loss=%.4f", epoch, avg_loss)
-
             val_loss, val_acc = evaluate(model, val_loader, criterion, device)
-            logger.info("Epoch %d: val_loss=%.4f val_acc=%.4f", epoch, val_loss, val_acc)
+            epoch_runtime = time.perf_counter() - epoch_start
+            total_runtime = time.perf_counter() - training_start
+            logger.info(
+                "Epoch %d: train_loss=%.4f val_loss=%.4f val_acc=%.4f runtime=%s total=%s",
+                epoch,
+                avg_loss,
+                val_loss,
+                val_acc,
+                format_duration(epoch_runtime),
+                format_duration(total_runtime),
+            )
 
             mlflow.log_metric("train_loss", avg_loss, step=epoch)
             mlflow.log_metric("val_loss", val_loss, step=epoch)
             mlflow.log_metric("val_acc", val_acc, step=epoch)
 
+        logger.info("Training iterations complete...")
         params = {
             "epochs": args.epochs,
             "batch_size": args.batch_size,
@@ -85,6 +132,7 @@ def main(args):
         metrics = {"final_val_loss": val_loss, "final_val_acc": val_acc}
         logger.info("Logging final metrics and model artifact to MLflow")
         mlflow_callback.log_model(model, params=params, metrics=metrics)
+    logger.info("Project complete")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -97,6 +145,13 @@ if __name__ == "__main__":
         "--register-model",
         action="store_true",
         help="Attempt to register the trained model in the MLflow Model Registry.",
+    )
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        default="INFO",
+        choices=sorted(LOG_LEVELS.keys()),
+        help="Logging verbosity level.",
     )
     args = parser.parse_args()
     main(args)
