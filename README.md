@@ -116,8 +116,9 @@ Adjust common options via command-line parameters passed by MLflow:
   --batch_size 64`.
 - Toggle model registry logging with `--register-model`.
 - Modify the dataset plumbing or model selection in `load_ptdata.py` and
-  `utils.py` as your use case evolves.
-
+  `utils.py` as your use case evolves.  I.e. note in this repo that
+  `load_ptdata.py` simply contains references to datasets.FakeData rather
+  than actual image data from files - presumably you'd want your own images!
 
 ## Makefile usage
 The `makefile` wraps frequent tasks:
