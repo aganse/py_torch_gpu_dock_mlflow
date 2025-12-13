@@ -1,9 +1,11 @@
 import unittest
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from load_ptdata import get_data_loaders
 from utils import build_model, evaluate
+
 
 class TestTrainLoop(unittest.TestCase):
     def test_one_epoch_training(self):
@@ -29,6 +31,7 @@ class TestTrainLoop(unittest.TestCase):
         val_loss, val_acc = evaluate(model, val_loader, criterion, device)
         self.assertTrue(0 <= val_acc <= 1)
         self.assertTrue(val_loss >= 0)
+
 
 if __name__ == "__main__":
     unittest.main()

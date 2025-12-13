@@ -2,17 +2,24 @@ import logging
 
 import mlflow
 import mlflow.pytorch
-from mlflow.exceptions import MlflowException
 import torch
+from mlflow.exceptions import MlflowException
 
 logger = logging.getLogger(__name__)
+
 
 class MLflowTorchCallback:
     def __init__(self, model_name: str, register: bool = False):
         self.model_name = model_name
         self.register = register
 
-    def log_model(self, model: torch.nn.Module, artifact_path: str = "model", params: dict = None, metrics: dict = None):
+    def log_model(
+        self,
+        model: torch.nn.Module,
+        artifact_path: str = "model",
+        params: dict = None,
+        metrics: dict = None,
+    ):
         if params:
             project_logged = {"epochs", "batch_size", "learning_rate", "model_name"}
             for k, v in params.items():
@@ -44,6 +51,8 @@ class MLflowTorchCallback:
                 raise
 
         if registered_successfully:
-            logger.info("Model logged and registered in MLflow as '%s'", self.model_name)
+            logger.info(
+                "Model logged and registered in MLflow as '%s'", self.model_name
+            )
         else:
             logger.info("Model logged in MLflow artifact path '%s'", artifact_path)

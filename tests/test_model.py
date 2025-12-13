@@ -1,6 +1,8 @@
 import unittest
+
 import torch
 from utils import build_model
+
 
 class TestModel(unittest.TestCase):
     def test_build_model_output_shape(self):
@@ -13,6 +15,7 @@ class TestModel(unittest.TestCase):
     def test_invalid_model_name(self):
         with self.assertRaises(ValueError):
             build_model("invalid_model")
+
 
 if __name__ == "__main__":
     unittest.main()
