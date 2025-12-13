@@ -7,6 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PIP_NO_CACHE_DIR=1 \
     PYTHONUNBUFFERED=1 \
     PIP_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cu118 \
+    GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git \
     VIRTUAL_ENV=/opt/venv
 
 RUN apt-get update \

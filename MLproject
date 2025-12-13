@@ -3,7 +3,21 @@ name: py_torch_gpu_dock_mlflow
 docker_env:
   image: torch-gpu-mlflow:latest
 
-# conda_env: null
+  # Volume map for the case of using local filestore not S3 for MLflow artifacts
+  # or training/eval data.  For MLflow artifacts that's whatever your MLflow
+  # tracking server (at MLFLOW_TRACKING_URI) uses.  Both data and mlruns will go
+  # in this mapping so keep uncommented if say MLflow's artifacts are in S3 but
+  # training data is local.  Note that ":/storage" below aligns with your mlflow
+  # tracking server using /storage/mlruns for its $ARTIFACTS, so update
+  # "/storage" as needed to match your mlflow server.
+  # The above is all about the in-container path on RIGHT side of ":" below.
+  # Set the host-system path on LEFT side of ":" to whatever actual spot in your
+  # local filesystem; modern MacOs has more restrictions than Linux for where.
+  # Lastly the pgpass is eg how I map my password credentials file for Postgres.
+  volumes: ["/usr/local:/usr/local", "~/.pgpass:/root/.pgpass"]  # eg for MacOs
+  # volumes: ["/storage:/storage", "~/.pgpass:/root/.pgpass"]  # eg for Linux
+
+  # environment: [["NEW_ENV_VAR", "new_var_value"], "VAR_TO_COPY_FROM_HOST_ENVIRONMENT"]
 
 entry_points:
   main:
