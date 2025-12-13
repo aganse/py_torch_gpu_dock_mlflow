@@ -94,7 +94,9 @@ def main(args):
     if args.register_model:
         logger.info("Model registry logging enabled.")
     else:
-        logger.info("Model registry logging disabled; artifacts will not be registered.")
+        logger.info(
+            "Model registry logging disabled; artifacts will not be registered."
+        )
     mlflow_callback = MLflowTorchCallback(
         model_name=args.model_name,
         register=args.register_model,
@@ -152,9 +154,12 @@ def main(args):
         mlflow_callback.log_model(model, params=params, metrics=metrics)
     logger.info("Project complete")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--epochs", type=int, default=1)  # default=1 epoch for quick testing
+    parser.add_argument(
+        "--epochs", type=int, default=1
+    )  # default=1 epoch for quick testing
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--learning_rate", type=float, default=1e-3)
     parser.add_argument("--model_name", type=str, default="resnet18")

@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torchvision.models as models
 
+
 def build_model(model_name: str):
     if model_name == "resnet18":
         model = models.resnet18(weights=None)
@@ -11,6 +12,7 @@ def build_model(model_name: str):
         raise ValueError(f"Unknown model_name: {model_name}")
     model.fc = nn.Linear(model.fc.in_features, 10)
     return model
+
 
 def evaluate(model, dataloader, criterion, device):
     model.eval()
