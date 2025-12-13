@@ -1,5 +1,7 @@
 .PHONY: env train run
 
+VERSION := $(strip $(shell cat VERSION))
+
 env:
 	bash make_env.bash
 
@@ -19,5 +21,6 @@ run_mlproject:
 	./project_driver.bash
 
 build:
-	docker build -t torch-gpu-mlflow .
+	@echo "Building torch-gpu-mlflow image (version $(VERSION))"
+	docker build -t torch-gpu-mlflow:$(VERSION) -t torch-gpu-mlflow:latest .
 	# docker run --rm torch-gpu-mlflow --epochs 1 --batch_size 

@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import time
+from pathlib import Path
 
 import mlflow
 import torch
@@ -21,6 +22,7 @@ LOG_LEVELS = {
 }
 
 logger = logging.getLogger(__name__)
+VERSION_PATH = Path(__file__).resolve().parent / "VERSION"
 
 
 class DotMillisecondsFormatter(logging.Formatter):
@@ -39,6 +41,16 @@ def configure_logging(level: int) -> None:
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     logging.basicConfig(level=level, handlers=[handler], force=True)
+
+
+def read_version() -> str | None:
+    try:
+        return VERSION_PATH.read_text(encoding="utf-8").strip()
+    except FileNotFoundError:
+        logger.warning("VERSION file not found; skipping version logging.")
+    except OSError as exc:
+        logger.warning("Unable to read VERSION file: %s", exc)
+    return None
 
 
 def format_duration(seconds: float) -> str:
@@ -90,6 +102,12 @@ def main(args):
 
     logger.info("Starting training for %d epochs", args.epochs)
     with mlflow.start_run(run_name=f"{args.model_name}-training"):
+        version = read_version()
+        if version:
+            logger.info("Logging image version %s to MLflow", version)
+            mlflow.set_tag("image_version", version)
+            mlflow.log_param("image_version", version)
+
         training_start = time.perf_counter()
         for epoch in range(1, args.epochs + 1):
             epoch_start = time.perf_counter()

@@ -1,4 +1,4 @@
-name: unittests
+name: flake8
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  tests:
+  lint:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,11 +19,10 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install dependencies
+      - name: Install flake8
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest
+          pip install flake8
 
-      - name: Run unit tests
-        run: python -m pytest -q tests/
+      - name: Run flake8
+        run: flake8 .
